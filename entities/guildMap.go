@@ -2,6 +2,7 @@ package entities
 
 import (
 	"fmt"
+	"github.com/bwmarrin/discordgo"
 	"io/ioutil"
 	"log"
 	"os"
@@ -13,8 +14,10 @@ const DBPath = "database/guilds"
 var (
 	Guilds = NewGuildMap(make(map[string]*GuildInfo))
 
-	guildFileNames = [...]string{"spoilerRoles.json", "rssThreads.json",
-		"rssThreadCheck.json", "raffles.json", "reactJoin.json", "guildSettings.json", "autoposts.json"}
+	guildFileNames = [...]string{"punishedUsers.json", "filters.json", "messReqs.json", "spoilerRoles.json", "rssThreads.json",
+		"rssThreadCheck.json", "raffles.json", "waifus.json", "waifuTrades.json", "memberInfo.json", "emojiStats.json",
+		"channelStats.json", "userChangeStats.json", "voteInfo.json", "tempCha.json",
+		"reactJoin.json", "guildSettings.json", "autoposts.json"}
 )
 
 // GuildMap is a mutex-safe map of GuildInfo
@@ -64,7 +67,15 @@ func (g *GuildMap) Init(guildID string) bool {
 			ReactsModule: true,
 			PingMessage:  "Hmmm~ So this is what you do all day long?",
 		},
+		MemberInfoMap:   make(map[string]UserInfo),
+		SpoilerMap:      make(map[string]*discordgo.Role),
+		EmojiStats:      make(map[string]Emoji),
+		ChannelStats:    make(map[string]Channel),
+		UserChangeStats: make(map[string]int),
+		VoteInfoMap:     make(map[string]*VoteInfo),
+		TempChaMap:      make(map[string]*TempChaInfo),
 		ReactJoinMap:    make(map[string]*ReactJoin),
+		ExtensionList:   make(map[string]string),
 		Autoposts:       make(map[string]Cha),
 	}
 
@@ -103,17 +114,13 @@ func (g *GuildMap) Load(guildID string) (bool, error) {
 	}
 
 	// Init default settings
-	g.Lock()
 	if _, ok := g.DB[guildID].Autoposts["newepisodes"]; ok {
 		Mutex.Lock()
-		SharedInfo.Lock()
-		AnimeSchedule.RLock()
 		SetupGuildSub(guildID)
-		AnimeSchedule.RUnlock()
-		SharedInfo.Unlock()
 		Mutex.Unlock()
 	}
 
+	g.Lock()
 	*g.DB[guildID] = *guild
 	g.Unlock()
 
@@ -155,10 +162,6 @@ func (g *GuildMap) LoadAll() {
 	}
 
 	// Write to shared AnimeSubs DB
-	Mutex.Lock()
-	defer Mutex.Unlock()
-	SharedInfo.Lock()
-	defer SharedInfo.Unlock()
 	_ = AnimeSubsWrite(SharedInfo.AnimeSubs)
 }
 

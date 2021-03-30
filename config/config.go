@@ -58,14 +58,7 @@ func ReadConfig() error {
 
 	OwnerID = config.OwnerID
 	PlayingMsg = config.PlayingMsg
-
-	// Takes the bot token from the environment variable. Reason is to avoid pushing token to github
-	//if os.Getenv("ZeroTsuToken") == "" {
-	//	panic(err)
-	//}
-	//Token = os.Getenv("ZeroTsuToken")
-
-	Token = "NzkyMzc3NTY3NDExMDQ0Mzcy.X-c1HQ.GMQV6xu4p_wFTBafF2V3eTmNJuI"
+	Token = config.BotID
 	return nil
 }
 

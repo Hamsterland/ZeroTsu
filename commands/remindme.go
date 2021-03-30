@@ -13,6 +13,7 @@ import (
 
 // Sets a remindMe note for after the target time has passed to be sent to the user
 func remindMeCommand(s *discordgo.Session, m *discordgo.Message) {
+
 	var (
 		remindMeObject entities.RemindMe
 		userID         string
@@ -24,6 +25,22 @@ func remindMeCommand(s *discordgo.Session, m *discordgo.Message) {
 
 	if m.GuildID != "" {
 		guildSettings = db.GetGuildSettings(m.GuildID)
+	}
+
+	// Checks if message contains filtered words, which would not be allowed as a remind
+	badWordExists, _, err := isFiltered(s, m)
+	if err != nil {
+		guildSettings := db.GetGuildSettings(m.GuildID)
+		common.LogError(s, guildSettings.BotLog, err)
+		return
+	}
+	if badWordExists {
+		_, err := s.ChannelMessageSend(m.ChannelID, "Error: Usage of server filtered words in the remindMe command is not allowed. Please use remindMe in another server I am in or DMs.")
+		if err != nil {
+			common.LogError(s, guildSettings.BotLog, err)
+			return
+		}
+		return
 	}
 
 	commandStrings := strings.SplitN(strings.Replace(m.Content, "  ", " ", -1), " ", 3)
@@ -110,13 +127,12 @@ func viewRemindMe(s *discordgo.Session, m *discordgo.Message) {
 
 	entities.Mutex.RLock()
 	if entities.SharedInfo.GetRemindMesMap()[userID] == nil || len(entities.SharedInfo.GetRemindMesMap()[userID].GetRemindMeSlice()) == 0 {
+		entities.Mutex.RUnlock()
 		_, err := s.ChannelMessageSend(m.ChannelID, "Error: No saved reminds for you found.")
 		if err != nil {
-			entities.Mutex.RUnlock()
 			common.LogError(s, guildSettings.BotLog, err)
 			return
 		}
-		entities.Mutex.RUnlock()
 		return
 	}
 	entities.Mutex.RUnlock()
@@ -182,8 +198,10 @@ func removeRemindMe(s *discordgo.Session, m *discordgo.Message) {
 	}
 
 	// Checks if the user has any reminds
+	entities.Mutex.RLock()
 	_, ok := entities.SharedInfo.GetRemindMesMap()[userID]
 	if !ok {
+		entities.Mutex.RUnlock()
 		_, err := s.ChannelMessageSend(m.ChannelID, "Error: No saved reminds found for you to delete.")
 		if err != nil {
 			common.LogError(s, guildSettings.BotLog, err)
@@ -191,6 +209,7 @@ func removeRemindMe(s *discordgo.Session, m *discordgo.Message) {
 		}
 		return
 	}
+	entities.Mutex.RUnlock()
 
 	commandStrings := strings.Split(strings.Replace(m.Content, "  ", " ", -1), " ")
 
@@ -214,6 +233,7 @@ func removeRemindMe(s *discordgo.Session, m *discordgo.Message) {
 	}
 
 	// Deletes the remind from the map and writes to disk
+	entities.Mutex.Lock()
 	for i, remind := range entities.SharedInfo.GetRemindMesMap()[userID].GetRemindMeSlice() {
 		if remind == nil {
 			continue
@@ -225,12 +245,14 @@ func removeRemindMe(s *discordgo.Session, m *discordgo.Message) {
 
 			err := entities.RemindMeWrite(entities.SharedInfo.GetRemindMesMap())
 			if err != nil {
+				entities.Mutex.Unlock()
 				common.CommandErrorHandler(s, m, guildSettings.BotLog, err)
 				return
 			}
 			break
 		}
 	}
+	entities.Mutex.Unlock()
 
 	// Prints success or error based on whether it deleted anything above
 	if flag {
