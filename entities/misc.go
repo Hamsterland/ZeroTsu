@@ -136,6 +136,7 @@ func IOReadDir(root string) ([]string, error) {
 
 func SetupGuildSub(guildID string) {
 	var shows []*ShowSub
+
 	now := time.Now().UTC()
 
 	// Adds every single show as a guild subscription

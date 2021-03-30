@@ -327,7 +327,6 @@ func GuildCreate(s *discordgo.Session, g *discordgo.GuildCreate) {
 	log.Println(fmt.Sprintf("Joined guild %s", g.Guild.Name))
 }
 
-
 // Logs BOT leaving a server
 func GuildDelete(_ *discordgo.Session, g *discordgo.GuildDelete) {
 	GuildIds.Lock()
@@ -381,7 +380,6 @@ func fixGuildSubsCommand(guildID string) {
 		}
 
 		entities.SetupGuildSub(guildID)
-		_ = entities.AnimeSubsWrite(entities.SharedInfo.AnimeSubs)
 		break
 	}
 }

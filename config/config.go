@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"os"
 )
 
 // File for BOT, server, channel and role info
@@ -61,10 +60,12 @@ func ReadConfig() error {
 	PlayingMsg = config.PlayingMsg
 
 	// Takes the bot token from the environment variable. Reason is to avoid pushing token to github
-	if os.Getenv("ZeroTsuToken") == "" {
-		panic(err)
-	}
-	Token = os.Getenv("ZeroTsuToken")
+	//if os.Getenv("ZeroTsuToken") == "" {
+	//	panic(err)
+	//}
+	//Token = os.Getenv("ZeroTsuToken")
+
+	Token = "NzkyMzc3NTY3NDExMDQ0Mzcy.X-c1HQ.GMQV6xu4p_wFTBafF2V3eTmNJuI"
 	return nil
 }
 
